@@ -2,13 +2,11 @@ import random
 import copy
 from collections import Counter
 
-words = []
 with open('wordle-nyt-answers-alphabetical.txt','r') as file:
     words = [line.strip() for line in file]
     
 def guesser(guess, guesses, wordInfo, wordCount, answer, answerCount):
     print(f'Guess: {guess}')
-    word = {}
     guessInfo = []
     lettersNeeded = copy.deepcopy(answerCount)
     for i, char in enumerate(guess):
@@ -33,6 +31,8 @@ def guesser(guess, guesses, wordInfo, wordCount, answer, answerCount):
             if info[1] == 0:
                 if info[0] not in wordCount:
                     wordCount[info[0]] = [0,1]
+    #print(f'wordcount: {wordCount}')
+    #print(f'wordinfo: {wordInfo}')
     if guess == answer:
         return guesses
     else:
@@ -70,31 +70,22 @@ def guesser(guess, guesses, wordInfo, wordCount, answer, answerCount):
                     if not valid:
                         break          
             if valid:            
-                possibleWords.append([word, 0])
-        print(f'possible words first: {possibleWords}')
-        print(f'word count: {wordCount}')
-        possibleWordsCopy = copy.deepcopy(possibleWords)
-        testerDict = {}
-        for i, word in enumerate(possibleWords):
-            print(f'word processing: {word[0]}')
-            for j, word2 in enumerate(possibleWords):
-                size = tester(word[0], possibleWordsCopy, 1, copy.deepcopy(wordInfo), copy.deepcopy(wordCount), word2[0], {k : word2[0].count(k) for k in word2[0]})
-                #print(f'if you guess {word[0]} when the answer is {word2[0]} there are {size} possible valid answers')
-                #print(f'so we assign {size} to {word[0]}')
-                if word[0] in testerDict:
-                    #print(f'adding {size} to {testerDict[word[0]]} at {word[0]} for answer {word2[0]}')
-                    testerDict[word[0]] += size
+                possibleWords.append(word)
+        #print(f'possible words first: {possibleWords}')
+        #print(f'word count: {wordCount}')
+        wordDict = {}
+        for word in possibleWords:
+            #print(f'word processing: {word[0]}')
+            for word2 in possibleWords:
+                size = tester(word, copy.deepcopy(possibleWords), 1, copy.deepcopy(wordInfo), copy.deepcopy(wordCount), word2, {k : word2.count(k) for k in word2})
+                if word in wordDict:
+                    wordDict[word] += size
                 else:
-                    #print(f'first size: {0} for {word[0]}')
-                    testerDict[word[0]] = 0
+                    wordDict[word] = 1
                 # input('continue?')
-            print(f'word done {word[0]} with size {testerDict[word[0]]}')
-        testerDict = {k: v for k, v in sorted(testerDict.items(), key = lambda item:item[1])}
-        print(f'tester dict: {testerDict}')
-        # possibleWords = sorted(possibleWords, key = lambda x:x[1])
-        # print(possibleWords)
-        return guesser(list(testerDict.keys())[0], guesses + 1, wordInfo, wordCount, answer, answerCount)
-        # return guesser(possibleWords[0][0], guesses + 1, wordInfo, wordCount, answer, answerCount)
+        wordDict = {k: v for k, v in sorted(wordDict.items(), key = lambda item:item[1])}
+        print(f'Guess choices: {wordDict}')
+        return guesser(list(wordDict.keys())[0], guesses + 1, wordInfo, wordCount, answer, answerCount)
 
 def tester(guess2, possibleWords2, guesses2, wordInfo2, wordCount2, answer2, answerCount2):
     guessInfo = []
@@ -125,17 +116,15 @@ def tester(guess2, possibleWords2, guesses2, wordInfo2, wordCount2, answer2, ans
         words = copy.deepcopy(possibleWords2)
         possibleWords2 = []
         for word in words:
-            word = word[0]
             valid = True
             wordCounter = Counter(word)
             # print(f'guess: {guess2}')
             # print(f'answer: {answer2}')
-            #print(f'valid word: {word}')
+            # print(f'valid word: {word}')
             # print(f'wordcounter: {wordCounter}')
             # print(f'wordcount2: {wordCount2}')
             # print(f'wordinfo2: {wordInfo2}')
             for letter in wordCount2:
-                #print(f'letter: {letter}')
                 if wordCount2.get(letter)[0] == 0:
                     if letter in wordCounter:
                         #print('1')
@@ -167,24 +156,21 @@ def tester(guess2, possibleWords2, guesses2, wordInfo2, wordCount2, answer2, ans
                         if info[0] not in word:
                             #print('7')
                             valid = False
-                    elif word[i] == info[0]:
-                        #print('8')
-                        valid = False 
+                    else:
+                        if word[i] == info[0]:
+                            #print('8')
+                            valid = False
                     if not valid:
                         break    
             if valid:            
                 possibleWords2.append(word)
-            #else:
-                #print('not valid')
-    #print(f'test possible words 2: {possibleWords2}')
     return len(possibleWords2)
 
 
 def main(efficiency, count):
     answer = words[random.randint(0,len(words)-1)]
     answerCount = {k : answer.count(k) for k in answer}
-    print(answer)
-    print(answerCount)
+    print(f'Solving for {answer}')
     guess = words[random.randint(0,len(words)-1)]
     guess = 'crane'
     guesses = guesser(guess, 1, [], {}, answer, answerCount)
